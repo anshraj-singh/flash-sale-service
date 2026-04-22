@@ -70,4 +70,8 @@ public class FlashSaleService {
     public List<FlashSale> getAllActiveSales() {
         return flashSaleRepository.findAll();
     }
+
+    public List<FlashSale> getSalesByVendor(String username) {
+        return flashSaleRepository.findAllByProductVendorUsername(username);
+    }
 }
