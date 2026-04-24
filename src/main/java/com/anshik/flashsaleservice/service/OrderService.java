@@ -3,10 +3,14 @@ package com.anshik.flashsaleservice.service;
 import com.anshik.flashsaleservice.dto.OrderEvent;
 import com.anshik.flashsaleservice.dto.OrderRequest;
 import com.anshik.flashsaleservice.entity.FlashSale;
+import com.anshik.flashsaleservice.entity.Order;
 import com.anshik.flashsaleservice.repository.FlashSaleRepository;
+import com.anshik.flashsaleservice.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -16,6 +20,7 @@ public class OrderService {
     private final StringRedisTemplate redisTemplate;
     private final OrderProducer orderProducer;
     private final FlashSaleRepository flashSaleRepository;
+    private final OrderRepository orderRepository;
 
     public String placeOrder(OrderRequest request, String username) {
         String redisKey = "flash_sale_stock:" + request.getSaleId();
@@ -47,5 +52,9 @@ public class OrderService {
         orderProducer.sendOrderEvent(event);
 
         return "Order Accepted! Tracking ID: " + event.getOrderId();
+    }
+
+    public List<Order> getMyOrders(String username) {
+        return orderRepository.findAllByUsernameOrderByCreatedAtDesc(username);
     }
 }

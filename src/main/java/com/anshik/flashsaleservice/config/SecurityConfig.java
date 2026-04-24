@@ -52,10 +52,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/vendor/flash-sale/all").permitAll()
 
                         // Vendor Only Endpoints
-                        .requestMatchers("/api/v1/vendor/products/**").hasRole("VENDOR")
-                        .requestMatchers("/api/v1/vendor/flash-sale/create").hasRole("VENDOR")
+                        .requestMatchers("/api/v1/vendor/**").hasRole("VENDOR")
 
-                        .requestMatchers("/api/v1/orders/buy").hasRole("CUSTOMER")
+                        .requestMatchers("/api/v1/orders/**").hasRole("CUSTOMER")
 
                         // Any other request must be authenticated
                         .anyRequest().authenticated()
