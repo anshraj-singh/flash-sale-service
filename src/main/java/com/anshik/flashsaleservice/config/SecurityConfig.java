@@ -55,6 +55,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/vendor/products/**").hasRole("VENDOR")
                         .requestMatchers("/api/v1/vendor/flash-sale/create").hasRole("VENDOR")
 
+                        .requestMatchers("/api/v1/orders/buy").hasRole("CUSTOMER")
+
                         // Any other request must be authenticated
                         .anyRequest().authenticated()
                 )
