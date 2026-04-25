@@ -15,10 +15,11 @@ import java.time.LocalDateTime;
 public class OrderConsumer {
 
     private final OrderRepository orderRepository;
+    private final EmailService emailService;
 
     @KafkaListener(topics = "flash-sale-orders", groupId = "flash-sale-group")
     public void consumeOrder(OrderEvent event) {
-        log.info("Order Received from Confluent Cloud for Processing: {}", event.getOrderId());
+        log.info("Order Received from Confluent Cloud: {}", event.getOrderId());
 
         try {
             Order order = Order.builder()
@@ -32,9 +33,10 @@ public class OrderConsumer {
                     .build();
 
             orderRepository.save(order);
-            log.info("Order saved to MySQL: {}", event.getOrderId());
+            emailService.sendOrderConfirmation(event.getUsername() + "@gmail.com", event.getOrderId());
+            log.info("Order successfully persisted to Database: {}", event.getOrderId());
         } catch (Exception e) {
-            log.error("Failed to save order: {}", e.getMessage());
+            log.error("Critical Error saving order {}: {}", event.getOrderId(), e.getMessage());
         }
     }
 }

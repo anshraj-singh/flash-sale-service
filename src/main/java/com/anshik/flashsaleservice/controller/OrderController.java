@@ -3,6 +3,7 @@ package com.anshik.flashsaleservice.controller;
 import com.anshik.flashsaleservice.dto.OrderRequest;
 import com.anshik.flashsaleservice.entity.Order;
 import com.anshik.flashsaleservice.service.OrderService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -18,8 +19,8 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping("/buy")
-    public ResponseEntity<String> buyNow(
-            @RequestBody OrderRequest request,
+    public ResponseEntity<?> buyNow(
+            @Valid @RequestBody OrderRequest request, // @Valid added
             @RequestHeader("X-Request-ID") String requestId,
             Authentication auth) {
 
