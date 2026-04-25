@@ -18,8 +18,16 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping("/buy")
-    public ResponseEntity<String> buyNow(@RequestBody OrderRequest request, Authentication auth) {
-        String response = orderService.placeOrder(request, auth.getName());
+    public ResponseEntity<String> buyNow(
+            @RequestBody OrderRequest request,
+            @RequestHeader("X-Request-ID") String requestId,
+            Authentication auth) {
+
+        String response = orderService.placeOrder(request, auth.getName(), requestId);
+
+        if(response.contains("Duplicate")) {
+            return ResponseEntity.status(409).body(response); // 409 Conflict
+        }
         return ResponseEntity.accepted().body(response);
     }
 
