@@ -7,11 +7,11 @@ import com.anshik.flashsaleservice.entity.Order;
 import com.anshik.flashsaleservice.repository.FlashSaleRepository;
 import com.anshik.flashsaleservice.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -26,20 +26,44 @@ public class OrderService {
     private final FlashSaleRepository flashSaleRepository;
 
     public String placeOrder(OrderRequest request, String username, String requestId) {
-        //! IDEMPOTENCY CHECK
-        String idempotencyKey = "idempotency:" + requestId;
         ValueOperations<String, String> ops = redisTemplate.opsForValue();
 
+        //! RATE LIMITING CHECK (5 requests per minute)
+        String rateLimitKey = "rate_limit:" + username;
+        String currentCount = ops.get(rateLimitKey);
+
+        if (currentCount != null && Integer.parseInt(currentCount) >= 5) {
+            throw new RuntimeException("Rate limit exceeded! Try again after a minute.");
+        }
+
+        if (currentCount == null) {
+            ops.set(rateLimitKey, "1", 1, TimeUnit.MINUTES);
+        } else {
+            ops.increment(rateLimitKey);
+        }
+
+        //! DYNAMIC SALE ACTIVATION CHECK
+        FlashSale sale = flashSaleRepository.findById(request.getSaleId())
+                .orElseThrow(() -> new RuntimeException("Sale not found"));
+
+        LocalDateTime now = LocalDateTime.now();
+        if (now.isBefore(sale.getStartTime())) {
+            throw new RuntimeException("Sale has not started yet!");
+        }
+        if (now.isAfter(sale.getEndTime())) {
+            throw new RuntimeException("Sale has ended!");
+        }
+
+        //! IDEMPOTENCY CHECK
+        String idempotencyKey = "idempotency:" + requestId;
         Boolean isFirstRequest = ops.setIfAbsent(idempotencyKey, "PROCESSING", 10, TimeUnit.MINUTES);
 
         if (Boolean.FALSE.equals(isFirstRequest)) {
             return "Duplicate Request! This order is already being processed.";
         }
 
-        // 2. STOCK CHECK (Redis DECR logic)
+        //! STOCK CHECK (Redis DECR)
         String redisKey = "flash_sale_stock:" + request.getSaleId();
-
-        //! Atomic Decrement in Redis
         Long remainingStock = redisTemplate.opsForValue().decrement(redisKey);
 
         if (remainingStock == null || remainingStock < 0) {
@@ -48,11 +72,7 @@ public class OrderService {
             return "SOLD OUT! Better luck next time.";
         }
 
-        //! KAFKA EVENT & RESPONSE
-        FlashSale sale = flashSaleRepository.findById(request.getSaleId())
-                .orElseThrow(() -> new RuntimeException("Sale not found"));
-
-        //! Create Kafka Event
+        //! KAFKA EVENT
         OrderEvent event = OrderEvent.builder()
                 .orderId(UUID.randomUUID().toString())
                 .username(username)
@@ -69,7 +89,6 @@ public class OrderService {
     }
 
     public List<Order> getMyOrders(String username) {
-        System.out.println("Fetching from MySQL... (This should only print once)");
         return orderRepository.findAllByUsernameOrderByCreatedAtDesc(username);
     }
 }

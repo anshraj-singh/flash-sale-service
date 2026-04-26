@@ -56,6 +56,8 @@ public class SecurityConfig {
 
                         .requestMatchers("/api/v1/orders/**").hasRole("CUSTOMER")
 
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+
                         // Any other request must be authenticated
                         .anyRequest().authenticated()
                 )

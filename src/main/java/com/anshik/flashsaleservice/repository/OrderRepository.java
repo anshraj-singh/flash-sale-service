@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface OrderRepository extends JpaRepository<Order, String> {
     List<Order> findAllByUsernameOrderByCreatedAtDesc(String username);
+    long countBySaleIdAndStatus(Long saleId, String status);
 }
