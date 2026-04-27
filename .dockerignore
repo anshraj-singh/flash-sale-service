@@ -1,0 +1,7 @@
+target/
+.git/
+.env
+.mvn/
+*.iml
+Dockerfile
+docker-compose.yml
