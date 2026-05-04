@@ -9,7 +9,7 @@
 
 </div>
 
-**flash-sale-service** is a high-performance, distributed backend engine architected to solve critical data consistency and system availability problems during extreme traffic spikes (10k+ Req/Sec).
+**flash-sale-service** is a high-performance, distributed backend engine architected to solve critical data consistency and system availability problems during extreme traffic spikes (1k+ Req/Sec).
 
 ---
 
